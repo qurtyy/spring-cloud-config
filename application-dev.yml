@@ -1,11 +1,22 @@
+server:
+  tomcat:
+    uri-encoding: UTF-8
+    remote-ip-header: x-forwarded-for
+  use-forward-headers: true
+
+management:
+  security:
+    enabled: false
+
 spring:
-  profiles:
-    active: dev
+  aop:
+    proxy-target-class: true
+    auto: true
   rabbitmq:
     host: paascloud-mq-rabbit
-    port: 5673
-    username: admin
-    password: admin
+    port: 5672
+    username: guest
+    password: guest
   redis:
     host: paascloud-db-redis
     password: paascloud@redis
@@ -13,78 +24,91 @@ spring:
     timeout: 0
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    username: root
-    password: 123456
-    type: com.alibaba.druid.pool.DruidDataSource
-    initial-size: 10
-    min-idle: 10
-    max-active: 20
-    test-on-borrow: true
-eureka:
+    filters: stat,wall
+    druid:
+      initial-size: 50
+      min-idle: 50
+      max-active: 100
+      test-on-borrow: true
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      web-stat-filter:
+        exclusions: '*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*'
+      stat-view-servlet:
+        allow:
+        login-username: admin
+        login-password: admin
+  mail:
+    host: smtp.163.com
+    username: paascloudTest@163.com
+    password: a123456
+    port: 465
+    protocol: smtp
+    test-connection: false
+    default-encoding: UTF-8
+    properties:
+      mail:
+        debug: true
+        smtp:
+          auth: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            port: 465
+          starttls:
+            enable: true
+            required: true
+  boot:
+    admin:
+      username: admin
+      password: admin
+  zipkin:
+    rabbitmq:
+      queue: zipkin
+  sleuth:
+    sampler:
+      percentage: 0.2
+
+feign:
+  hystrix:
+    enabled: true
   client:
-    serviceUrl:
-      defaultZone: http://root:root@paascloud-eureka:8761/eureka/
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+
+ribbon:
+  eager-load:
+    enabled: true
+  MaxAutoRetries: 1
+  MaxAutoRetriesNextServer: 2
+  OkToRetryOnAllOperations: false
+  ConnectTimeout: 60000
+  ReadTimeout: 20000
+
+hystrix:
+  command:
+    default:
+      execution:
+        timeout:
+          enabled: true
+        isolation:
+          thread:
+            timeoutInMilliseconds: 20000
+
+info:
+  软件著作权: paascloud快速搭建企业级分布式微服务平台
+  著作登记号: 2018SR320076
+  关于我们: http://paascloud.net
+
 paascloud:
-  server:
-    eureka:
-      port: 8761
-      hostname: paascloud-eureka
-      serviceUrl: http://root:root@paascloud-eureka:8761/eureka/
-    discovery:
-      port: 8080
-      hostname: paascloud-discovery
-      serviceUrl: http://admin:admin@paascloud-discovery:8080
-    gateway:
-      port: 80
-      hostname: paascloud-gateway
-    monitor:
-      port: 8010
-      hostname: paascloud-monitor
-      serviceUrl: http://paascloud-monitor:8010
-    zipkin:
-      port: 8020
-      hostname: paascloud-zipkin
-      serviceUrl: http://paascloud-zipkin:8020
-    provider:
-      ehc:
-        port: 8040
-        hostname: paascloud-provider-ehc
-      mdc:
-        port: 8030
-        hostname: paascloud-provider-mdc
-      omc:
-        port: 8050
-        hostname: paascloud-provider-omc
-      opc:
-        port: 8070
-        hostname: paascloud-provider-opc
-      ptc:
-        port: 8060
-        hostname: paascloud-provider-ptc
-      uac:
-        port: 8000
-        hostname: paascloud-provider-uac
-    web:
-      mall:
-        port: 9000
-        hostname: paascloud-web-mall
   auth:
     jwt:
       expiredRemainMinutes: 20
       expiredMinutes: 120
-  mail:
-    host: smtp.sina.com
-    username: 'your email address'
-    password: 'your email password'
-    test-connection: false
-    properties:
-      mail:
-        smtp:
-          auth: true
-          timeout: 2500
-          starttls:
-            enable: true
-            required: true
   aliyun:
     key:
       accessKeyId: 'your aliyun accessKeyId'
@@ -109,5 +133,7 @@ paascloud:
     callback:
       url: http://dev-api.paascloud.net/omc/pay/alipayCallback
     qrCode:
-      pcPath: E:/File/alipay/QRCode
+      pcPath: /data/file/qrCode/alipay
       qiniuPath: alipay/QRCode/
+  zk:
+    zkAddressList: paascloud-provider-zk:2181
